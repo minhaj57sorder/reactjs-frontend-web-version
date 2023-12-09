@@ -1,111 +1,676 @@
 <!DOCTYPE html>
 <html>
+<script src="https://cdn.tailwindcss.com"></script>
+
 <body>
-  <div id="root"></div>
+  <div id="root" class="bg-black overflow-hidden"></div>
 </body>
 <!-- This setup is not suitable for production. -->
 <!-- Only use it in development! -->
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script async src="https://ga.jspm.io/npm:es-module-shims@1.7.0/dist/es-module-shims.js"></script>
 <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react?dev",
-    "react-dom/client": "https://esm.sh/react-dom/client?dev"
+  {
+    "imports": {
+      "react": "https://esm.sh/react?dev",
+      "react-dom/client": "https://esm.sh/react-dom/client?dev"
+    }
   }
-}
 </script>
 <script type="text/babel" data-type="module">
-import React, { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+  import React, { StrictMode } from 'react';
+  import { createRoot } from 'react-dom/client';
+  import { useState, useContext, useEffect, createRef, useRef, createContext, useReducer } from 'react';
 
-import { useState } from 'react';
+  const ClipFilterContext = createContext();
 
-let App = function MyApp() {
-  const [count, setCount] = useState(0);
+  const ClipFilterProvider = ({ children }) => {
+    function reducer(state, action) {
+      switch (action.type) {
+        case "careerStage": {
+          return {
+            ...state,
+            careerStage: action.value,
+          };
+        }
+        case "fieldOfResearch": {
+          return {
+            ...state,
+            fieldOfResearch: action.value,
+          };
+        }
+        case "institution": {
+          return {
+            ...state,
+            institution: action.value,
+          };
+        }
+        case "rigorTopic": {
+          return {
+            ...state,
+            rigorTopic: action.value,
+          };
+        }
+        case "emptyfilter": {
+          return {
+            ...state,
+            careerStage: null,
+            fieldOfResearch: null,
+            institution: null,
+            rigorTopic: null,
+          };
+        }
+        default: {
+          return state;
+        }
+      }
+    }
+    const [filterData, dispatchFilterData] = useReducer(reducer, {
+      careerStage: null,
+      fieldOfResearch: null,
+      institution: null,
+      rigorTopic: null,
+    });
+    return (
+      <ClipFilterContext.Provider value={{ filterData, dispatchFilterData }}>
+        {children}
+      </ClipFilterContext.Provider>
+    );
+  };
 
-  function handleClick() {
-    setCount(count + 1);
-  }
 
-  return (
-    <div>
-      <h1>Counters that update together</h1>
-      <MyButton count={count} onClick={handleClick} />
-      <MyButton count={count} onClick={handleClick} />
-    </div>
+  const MultipleSelector = ({ children, fields, handleSelected }) => {
+    const selectorBtnEl = useRef(null);
+    const inputElement = useRef(null);
+    const [isOnList, setIsOnList] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [selected, setSelected] = useState(null);
+    // Create a 2D array of refs
+    const divRefs = useRef(
+      Array.from({ length: fields.length }, () => createRef())
+    );
+
+    // Create a 2D array of state to track click status
+    const [scheduleClicked, setScheduleClicked] = useState(
+      Array.from({ length: fields.length }, () => false)
+    );
+
+    // Function to handle the click event on a div
+    const handleClick = (rowIndex) => {
+      // Toggle the click status
+      const updatedClicked = [...scheduleClicked];
+      updatedClicked[rowIndex] = !updatedClicked[rowIndex];
+      setScheduleClicked(updatedClicked);
+      setFieldSelected(updatedClicked);
+    };
+    const setFieldSelected = (e) => {
+      setSelected(e);
+      const selectedValues = [];
+      if (handleSelected) {
+        selectedValues.length = 0;
+        for (let i in fields) {
+          if (e[i]) {
+            selectedValues.push(fields[i]);
+          }
+        }
+        handleSelected(selectedValues);
+      }
+    };
+    const btnblur = () => {
+      setIsOpen(false);
+    }
+    return (
+      <button ref={selectorBtnEl} onBlur={btnblur} className="relative w-full">
+        <div
+          className={`${isOpen ? "rounded-b-none" : ""
+            } bg-gray-200/50 text-white relative rounded-xl shadow-[0_15px_10px_-10px_rgba(0,0,0,0.4)]`}
+        >
+          <div
+            ref={inputElement}
+            className={`${isOpen ? "z-0" : "z-50"
+              } h-[26px] px-2 cursor-pointer w-full absolute top-0 left-0 opacity-0`}
+            type="text"
+            onFocus={() => {
+              setIsOpen(true);
+            }}
+          ></div>
+          <div
+            className="bg-gray-100/50 w-[26px] h-[26px] flex items-center justify-center absolute left-0 top-0 cursor-pointer rounded-tl-xl  rounded-bl-xl"
+            onClick={() => {
+              setIsOpen(!isOpen);
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width={18}
+              viewBox="0 0 24 18"
+              fill="none"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M22.6066 7.51472L13.0606 17.0607C12.4748 17.6464 11.5251 17.6464 10.9393 17.0607L1.39335 7.51472C0.807567 6.92893 0.807567 5.97918 1.39335 5.3934C1.97914 4.80761 2.92889 4.80761 3.51467 5.3934L10.5 12.3787L10.5 -4.68425e-07L13.5 -3.56415e-07L13.5 12.3787L20.4852 5.3934C21.071 4.80761 22.0208 4.80761 22.6066 5.3934C23.1923 5.97918 23.1923 6.92893 22.6066 7.51472Z"
+                fill="#404040"
+              />
+            </svg>
+          </div>
+          <div className="text-black width-full-26px flex justify-start items-center relative ml-[26px] z-50">
+            <div
+              className="h-[26px] flex items-center px-2 cursor-pointer w-full"
+              onClick={() => {
+                setIsOpen(!isOpen);
+              }}
+            >
+              <p>{children}</p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onMouseOver={() => setIsOnList(false)}
+          onMouseLeave={() => setIsOnList(true)}
+          className={`${isOpen ? "" : "h-0 overflow-hidden"
+            } absolute text-black top-[100%] w-full bg-gray-500 rounded-bl-xl rounded-br-xl z-[1000]`}
+        >
+          {fields &&
+            divRefs.current.map((ref, index) => (
+              <div
+                className={`${scheduleClicked[index] ? "bg-gray-200/90" : ""
+                  } h-[26px] flex items-center px-2 cursor-pointer relative`}
+                key={index}
+                ref={ref}
+                onClick={() => handleClick(index)}
+              >
+                <div className="absolute left-0 top-0 w-[26px] h-[26px] flex items-center justify-center">
+                  {scheduleClicked[index] && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={20}
+                      height={15}
+                      viewBox="0 0 20 15"
+                      fill="none"
+                    >
+                      <path
+                        d="M0.0227051 7.81251L1.53407 6.26138L6.78407 11.4318L17.642 0.613647L19.1932 2.16478L6.78407 14.5341L0.0227051 7.81251Z"
+                        fill="#A5A5A5"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <p className="pl-[24px]">{fields[index]}</p>
+              </div>
+            ))}
+        </div>
+      </button>
+    );
+  };
+
+
+  const VideoListCardUi = ({ right, info, setvideoLink }) => {
+    return (
+      <div
+        onClick={() => setvideoLink(info)}
+        className={`flex bg-[rgba(144,_123,_154,_0.38)] text-white rounded-lg ${right ? "flex-row-reverse" : ""
+          }`}
+      >
+        <div
+          className={`w-[123px] max-h-max flex justify-center items-center text-center rounded-lg border-black bg-white p-2 ${right ? "border-s-4" : "border-e-4"
+            }`}
+        >
+          {info && info?.thumbnail ? (
+            <img
+              src={`${info?.thumbnail.data}`}
+              width={"123px"}
+              height={"123px"}
+              alt={`${info?.videoTitle}`}
+            />
+          ) : (
+            <h3 className="text-black font-bold">
+              THUMB
+              <br />
+              NAIL
+            </h3>
+          )}
+        </div>
+        <div
+          className={`w-[calc(100%_-_123px)] flex flex-col justify-center space-y-1 p-2 `}
+        >
+          <h3 className="text-[16px]  font-bold">{info?.videoTitle}</h3>
+          <p className="text-[14px] leading-[18px]">{info?.videoDetailsText}</p>
+          <p className="text-[10px] leading-[18px]">
+            <span className="font-bold">Keywords</span>: {info?.videoKeywords}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+
+  const VideoListCardLayout = ({ children, imageurl }) => {
+    return (
+      <div className="p-3 pb-0">
+        <div className="flex relative">
+          <img
+            className="md:w-[250px] w-[300px] absolute md:right-[-74px] right-[-97px] md:top-[-55px] top-[-67px] z-10"
+            src={imageurl ? imageurl : "/imoje-charecters/raven-prof.png"}
+            alt="Raven Stop"
+          />
+          <div className="bg-white text-gray-900 w-[calc(100%_-40px)] h-full absolute left-[0px] rounded-md"></div>
+          <div className="bg-transparent text-gray-900 w-[calc(100%_-40px)] left-[0px] z-20">
+            <div className="mr-[87px] px-2 py-2 flex flex-col justify-between h-full">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const TopCardUi = () => {
+    const question = "hello";
+    const [answerShow, setAnswerShow] = useState(false);
+    const toggleAnswerShow = () => {
+      setAnswerShow(!answerShow);
+    };
+    return (
+      <VideoListCardLayout imageurl={"/imoje-charecters/Raven-investigating.png"}>
+        <div>
+          <h4 className="text-[33px] leading-[64px] text-center font-bold text-black">
+            Let’s put a face to this.
+          </h4>
+          <p className="text-[18px] leading-[24px] text-center font-normal text-black">
+            The cost of lacking rigor is not always visible, so we’ve collected testimonials volunteered by rigor champions from all walks of life to highlight the real human impact these issues often have.
+          </p>
+          <p className="text-[14px] leading-[24px] text-center font-bold text-black mt-1">
+            Based on your background, we recommend these...
+          </p>
+        </div>
+      </VideoListCardLayout>
+    );
+  };
+
+
+
+  const FilterVideoSelectors = () => {
+    const { filterData, dispatchFilterData } = useContext(ClipFilterContext);
+    const [careerStage, setCareerStage] = useState([]);
+    const careerStageFields = [
+      "Professor",
+      "Postdoc",
+      "PhD Student",
+      "Undergraduate",
+      "Other",
+    ];
+    const [fieldOfResearch, setFieldOfResearch] = useState([]);
+
+    const fieldOfResearchFields = [
+      "Neurobio",
+      "Cog Neuro",
+      "Comp Neuro",
+      "Deep Learning",
+      "Other",
+    ];
+
+    const [institution, setInstitution] = useState([]);
+
+    const institutionFields = [
+      "University",
+      "Government",
+      "Industry",
+      "Start-Up",
+      "Other",
+    ];
+    const [rigorTopic, setRigorTopic] = useState([]);
+
+    const rigorTopicFields = [
+      "P-Hacking",
+      "HARKing",
+      "Bias in ML",
+      "Literature Review",
+      "Other",
+    ];
+    return (
+      <div className="flex space-x-2">
+        <div className="w-1/2 space-y-2 text-[14px]">
+          <MultipleSelector
+            fields={careerStageFields}
+            handleSelected={(e) => { setCareerStage(e); dispatchFilterData({ type: 'careerStage', value: e }) }}
+          >
+            Career Stage
+          </MultipleSelector>
+          <MultipleSelector
+            fields={fieldOfResearchFields}
+            handleSelected={(e) => { setFieldOfResearch(e); dispatchFilterData({ type: 'fieldOfResearch', value: e }) }}
+          >
+            Field of Research
+          </MultipleSelector>
+        </div>
+        <div className="w-1/2 space-y-2 text-[14px]">
+          <MultipleSelector
+            fields={institutionFields}
+            handleSelected={(e) => { setInstitution(e); dispatchFilterData({ type: 'institution', value: e }) }}
+          >
+            Institution
+          </MultipleSelector>
+          <MultipleSelector
+            fields={rigorTopicFields}
+            handleSelected={(e) => { setRigorTopic(e); dispatchFilterData({ type: 'rigorTopic', value: e }) }}
+          >
+            Rigor Topic
+          </MultipleSelector>
+        </div>
+      </div>
+    );
+  };
+
+
+  const AllViews = () => {
+
+    const { filterData, dispatchFilterData } = useContext(ClipFilterContext);
+    const [videoClipListList, setVideoClipListList] = useState({
+      page: 1,
+      pages: 1,
+      videoClipLists: null,
+    });
+
+    const [currentVideoLink, setCurrentVideoLink] = useState(null);
+    const [nextLink, setNextLink] = useState(null);
+    const [listLoading, setListLoading] = useState(false);
+    const [expandBottomSection, setExpandBottomSection] = useState(true);
+    const [shareTooltipStatus, setShareTooltipStatus] = useState(false);
+    const getvideoClipListsList = async (page = 1) => {
+      const config = {
+        method: "GET",
+        params: {
+          pageNumber: page,
+          careerStage: filterData?.careerStage ? JSON.stringify(filterData?.careerStage) : null,
+          fieldOfResearch: filterData?.fieldOfResearch ? JSON.stringify(filterData?.fieldOfResearch) : null,
+          institutionSelector: filterData?.institutionSelector ? JSON.stringify(filterData?.institutionSelector) : null,
+          rigorTopic: filterData?.rigorTopic ? JSON.stringify(filterData?.rigorTopic) : null,
+        },
+      };
+      setListLoading(true);
+      try {
+        const response = await fetch("https://clip-repository-two.vercel.app/api/videoClipList", config);
+        setVideoClipListList(await response.json());
+        console.log("reseaved data:", videoClipListList)
+        setListLoading(false);
+      } catch (error) {
+        setListLoading(false);
+        /*
+        if (error.response.status == 401) {
+          console.log(error);
+          toast.error(error.response.data.message + ", Login to try again.", {
+            position: "top-center",
+          });
+          router.push("/");
+        } else {
+          toast.error(error.message, {
+            position: "top-center",
+          });
+        }*/
+      }
+    };
+    function toggleExpandBottomSection() {
+      setExpandBottomSection(!expandBottomSection);
+      if (expandBottomSection) {
+        console.log("opening expand section");
+        console.log("get filtered videos");
+      }
+    }
+    function copyToClipBoard(value) {
+      // Copy the text inside the text field
+      navigator.clipboard.writeText(value);
+      toast("Link copied: " + value, {
+        position: "top-center",
+      });
+    }
+    useEffect(() => {
+      if (!videoClipListList.videoClipLists) {
+        getvideoClipListsList();
+      }
+      getvideoClipListsList();
+    }, [filterData]);
+    return (
+      <div>
+        <TopCardUi />
+        {/* <div className="text-white">{JSON.stringify(filterData)}</div> */}
+        {!currentVideoLink && !nextLink && (
+          <div className="mx-3 p-3 pb-0 border-x-2 space-y-2 border-violet-600 rounded-lg">
+            
+            <div
+              className={`space-y-2 pb-3 ${expandBottomSection ? "" : ""
+                } `}
+            >
+              {videoClipListList?.videoClipLists?.map((e, index) => (
+                <div key={index}>
+                  <VideoListCardUi
+                    info={e}
+                    right={index % 2 !== 0}
+                    setvideoLink={setCurrentVideoLink}
+                  />
+                </div>
+              ))}
+            </div>
+            <div
+              className={`space-y-2 ${expandBottomSection ? "h-0 overflow-hidden" : "py-2"
+                }`}
+            >
+              <FilterVideoSelectors />
+              <hr className="border-violet-600" />
+
+              <div
+              className={`space-y-2 pb-3 ${expandBottomSection ? "" : ""
+                } `}
+            >
+              {videoClipListList?.videoClipLists?.map((e, index) => (
+                <div key={index}>
+                  <VideoListCardUi
+                    info={e}
+                    right={index % 2 !== 0}
+                    setvideoLink={setCurrentVideoLink}
+                  />
+                </div>
+              ))}
+            </div>
+            </div>
+          </div>
+        )}
+        {currentVideoLink && !nextLink && (
+          <div className="mx-3 p-3 ">
+            <iframe
+              width="713" height="405"
+              src={`https://www.youtube.com/embed/${currentVideoLink?.videoLink}?rel=0`}
+              title="YouTube video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+            {!shareTooltipStatus ? (<div className="relative flex justify-between text-[16px] font-bold mt-2">
+              <button
+                className="px-14 py-3 bg-violet-600 text-white rounded-sm"
+                onClick={() => setCurrentVideoLink(null)}
+              >
+                Back to Recommendations
+              </button>
+              <button
+                className="px-14 py-3 bg-purple-400/80 text-white rounded-sm"
+                onClick={() => setShareTooltipStatus(true)}
+              >
+                Share Video
+              </button>
+
+              <a
+                className="px-14 py-3 bg-orange-400 text-white rounded-sm"
+                target="_blank"
+                href={`${currentVideoLink?.nextLink}`}
+              >
+                Next
+              </a>
+            </div>) : (
+              <div
+                className="flex justify-center mt-5"
+                onClick={() => setShareTooltipStatus(false)}
+              >
+                <div className="space-x-5 text-2xl flex">
+                  <a
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    target="_blank"
+                    href={`https://twitter.com/intent/tweet?text=https://youtu.be/${currentVideoLink.videoLink}`}
+                  >
+                    icon                </a>
+                  <a
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    target="_blank"
+                    href={`http://www.reddit.com/submit?url=https://youtu.be/${currentVideoLink.videoLink}`}
+                  >
+                    icon                </a>
+                  <a
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    target="_blank"
+                    href={`whatsapp://send?text=https://youtu.be/${currentVideoLink.videoLink}`}
+                  >
+                    icon                </a>
+                  <a
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    target="_blank"
+                    href={`https://www.facebook.com/sharer/sharer.php?u=https://youtu.be/${currentVideoLink.videoLink}`}
+                  >
+                    icon                </a>
+                  <a
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    target="_blank"
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=https://youtu.be/${currentVideoLink.videoLink}`}
+                  >
+                    icon                </a>
+                  <button
+                    className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
+                    onClick={() =>
+                      copyToClipBoard(`https://youtu.be/${currentVideoLink.videoLink}`)
+                    }
+                  >
+                    icon                </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {nextLink && (
+          <div className="relative px-4 text-white w-full h-[540px]">
+            <button
+              className="bg-red-600 text-white absolute top-2 left-4 px-2 py-1 rounded-md text-sm"
+              onClick={() => setNextLink(null)}
+            >
+              go back
+            </button>
+            <iframe
+              width="374"
+              height="540"
+              src={`${currentVideoLink?.nextLink}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          </div>
+        )}
+
+        {/* expansion btn */}
+        {!currentVideoLink && !nextLink && <div className="mx-6 ">
+          <button
+            className="px-2 w-full flex justify-between items-center bg-violet-600 text-white"
+            onClick={() => toggleExpandBottomSection()}
+          >
+            <div className="w-[30px] flex justify-center text-lg">
+              {expandBottomSection ? (
+                <svg
+                  stroke="currentColor"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  viewBox="0 0 24 24"
+                  height="1em"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path fill="none" d="M0 0h24v24H0V0z" />
+                  <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+              ) : (
+                <svg
+                  stroke="currentColor"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  viewBox="0 0 24 24"
+                  height="1em"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path fill="none" d="M0 0h24v24H0z" />
+                  <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                </svg>
+
+              )}
+            </div>
+            <p className="text-center text-[10px]">
+              {expandBottomSection
+                ? "Don't like our recs? Click to see all clips."
+                : "Collapse clip repository"}
+            </p>
+            <div className="w-[30px] flex justify-center text-lg">
+              {expandBottomSection ? (
+                <svg
+                  stroke="currentColor"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  viewBox="0 0 24 24"
+                  height="1em"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path fill="none" d="M0 0h24v24H0V0z" />
+                  <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+              ) : (
+                <svg
+                  stroke="currentColor"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  viewBox="0 0 24 24"
+                  height="1em"
+                  width="1em"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path fill="none" d="M0 0h24v24H0z" />
+                  <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+                </svg>
+
+              )}
+            </div>
+          </button>
+        </div>}
+      </div>
+    );
+  };
+
+
+
+  const root = createRoot(document.getElementById('root'));
+  root.render(
+    <StrictMode>
+      <ClipFilterProvider>
+        <AllViews />
+      </ClipFilterProvider>
+    </StrictMode>
   );
-}
-
-function MyButton({ count, onClick }) {
-  return (
-    <button onClick={onClick}>
-      Clicked {count} times
-    </button>
-  );
-}
-
-
-const root = createRoot(document.getElementById('root'));
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
 </script>
 <style>
-* {
-  box-sizing: border-box;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-body {
-  font-family: sans-serif;
-  margin: 20px;
-  padding: 0;
-}
-
-h1 {
-  margin-top: 0;
-  font-size: 22px;
-}
-
-h2 {
-  margin-top: 0;
-  font-size: 20px;
-}
-
-h3 {
-  margin-top: 0;
-  font-size: 18px;
-}
-
-h4 {
-  margin-top: 0;
-  font-size: 16px;
-}
-
-h5 {
-  margin-top: 0;
-  font-size: 14px;
-}
-
-h6 {
-  margin-top: 0;
-  font-size: 12px;
-}
-
-code {
-  font-size: 1.2em;
-}
-
-ul {
-  padding-inline-start: 20px;
-}
-
-button {
-  display: block;
-  margin-bottom: 5px;
-}
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+  }
 
 </style>
+
 </html>
