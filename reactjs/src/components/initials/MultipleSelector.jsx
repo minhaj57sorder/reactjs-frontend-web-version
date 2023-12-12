@@ -59,11 +59,11 @@ const MultipleSelector = ({ children, fields, handleSelected }) => {
           }}
         ></div>
         <div
-          className="bg-ui-gray-1 w-[26px] h-[26px] flex items-center justify-center absolute left-0 top-0 cursor-pointer rounded-tl-xl  rounded-bl-xl"
+          className="bg-ui-gray-1 w-[26px] h-[26px] flex items-center justify-center absolute left-0 top-0 cursor-pointer pointer-events-none rounded-tl-xl  rounded-bl-xl"
           onClick={() => {
             setIsOpen(!isOpen);
           }}
-        >
+          >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width={18}
@@ -78,9 +78,9 @@ const MultipleSelector = ({ children, fields, handleSelected }) => {
             />
           </svg>
         </div>
-        <div className="text-black width-full-26px flex justify-start items-center relative ml-[26px] z-50">
+        <div className="text-black width-full flex justify-start items-center relative z-50">
           <div
-            className="h-[26px] flex items-center px-2 cursor-pointer w-full"
+            className="h-[26px] flex items-center px-2 pl-[32px] cursor-pointer w-full"
             onClick={() => {
               setIsOpen(!isOpen);
             }}

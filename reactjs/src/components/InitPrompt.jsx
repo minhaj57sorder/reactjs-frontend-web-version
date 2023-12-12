@@ -55,8 +55,10 @@ const AllViews = () => {
     setListLoading(true);
     try {
       const response = await api.request(config);
+      if(response.data.videoClipLists.length > 3 ){
+        response.data.videoClipLists.length =  3 
+      }
       setVideoClipListList(response.data);
-      console.log(response.data);
       setListLoading(false);
     } catch (error) {
       console.log(error);
@@ -96,7 +98,7 @@ const AllViews = () => {
     try {
       const response = await api.request(config);
       setFilteredVideoClipListList(response.data);
-      console.log(response.data);
+      // console.log(response.data);
       setListLoading(false);
     } catch (error) {
       console.log(error);
@@ -117,7 +119,7 @@ const AllViews = () => {
     if (expandBottomSection) {
       console.log("opening expand section");
       console.log("get filtered videos");
-      getFilteredVideoClipListsList()
+      getFilteredVideoClipListsList();
     }
   }
   function copyToClipBoard(value) {
@@ -126,6 +128,10 @@ const AllViews = () => {
     toast("Link copied: " + value, {
       position: "top-center",
     });
+  }
+
+  function getTrimedReview(str, len = 110) {
+    return { content: `${str.slice(0, len)} `, isTrimed: str.length > len };
   }
   useEffect(() => {
     if (!videoClipListList.videoClipLists) {
@@ -140,8 +146,12 @@ const AllViews = () => {
       <TopCardUi />
       {/* <div className="text-white">{JSON.stringify(filterData)}</div> */}
       {!currentVideoLink && !nextLink && (
-        <div className="mx-3 p-3 pb-0 border-x-2 space-y-2 border-ui-violet rounded-lg">
-          <div className={`space-y-2 pb-3 ${expandBottomSection ? "" : ""}`}>
+        <div className="mx-3 p-1 pb-0 border-x-2 space-y-2 border-ui-violet rounded-lg">
+          <div
+            className={`space-y-2 px-4 pt-4 ${
+              expandBottomSection ? " pb-4" : ""
+            }`}
+          >
             {videoClipListList.videoClipLists?.map((e, index) => (
               <div key={index}>
                 <VideoListCardUi
@@ -152,41 +162,49 @@ const AllViews = () => {
               </div>
             ))}
           </div>
-          {!expandBottomSection?
-          <div
-            className={`space-y-2 ${
-              expandBottomSection ? "h-0 overflow-hidden" : "py-2"
-            }`}
-          >
-            <FilterVideoSelectors />
-            <hr className="border-ui-violet" />
-            <div className={`space-y-2 pb-3 max-h-[300px] overflow-y-scroll`}>
-              {filteredVideoClipListList.videoClipLists?.map((e, index) => (
-                <div key={index}>
-                  <VideoListCardUi
-                    info={e}
-                    right={index % 2 !== 0}
-                    setvideoLink={setCurrentVideoLink}
-                  />
-                </div>
-              ))}
+          {!expandBottomSection ? (
+            <div
+              className={`space-y-2  pb-4 ${
+                expandBottomSection ? "h-0 overflow-x-hidden" : "py-2"
+              }`}
+            >
+              <div className=" mx-4 pb-3">
+                <FilterVideoSelectors />
+              <hr className="border-ui-violet mt-4  px-4" />
+              </div>
+              <div
+                className={`space-y-2 ps-4 pe-1 min-h-[80px] ${filteredVideoClipListList.videoClipLists.length > 3?'overflow-y-scroll me-1  max-h-[360px]':'me-3'}`}
+              >
+                {filteredVideoClipListList.videoClipLists?.map((e, index) => (
+                  <div key={index}>
+                    <VideoListCardUi
+                      info={e}
+                      right={index % 2 !== 0}
+                      setvideoLink={setCurrentVideoLink}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          :""}
+          ) : (
+            ""
+          )}
         </div>
       )}
       {currentVideoLink && !nextLink && (
         <div className="mx-3 p-3 ">
-          <iframe
-            width="713"
-            height="405"
-            src={`https://www.youtube.com/embed/${currentVideoLink?.videoLink}?rel=0`}
-            title="YouTube video player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          ></iframe>
+          <div className="w-full flex justify-center">
+            <iframe
+              width="713"
+              height="405"
+              src={`https://www.youtube.com/embed/${currentVideoLink?.videoLink}?rel=0`}
+              title="YouTube video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            ></iframe>
+          </div>
           {!shareTooltipStatus ? (
-            <div className="relative flex justify-between text-[16px] font-bold mt-2">
+            <div className="relative flex justify-between text-[16px] font-bold mt-2 text-white">
               <button
                 className="px-14 py-3 bg-ui-violet rounded-sm"
                 onClick={() => setCurrentVideoLink(null)}
@@ -213,7 +231,7 @@ const AllViews = () => {
               className="flex justify-center mt-5"
               onClick={() => setShareTooltipStatus(false)}
             >
-              <div className="space-x-5 text-2xl flex">
+              <div className="space-x-5 text-2xl flex text-white">
                 <a
                   className="p-2 bg-gray-700 hover:bg-gray-500 rounded-full"
                   target="_blank"
@@ -264,29 +282,12 @@ const AllViews = () => {
           )}
         </div>
       )}
-      {nextLink && (
-        <div className="relative px-4 text-white w-full h-[540px]">
-          <button
-            className="bg-red-600 text-white absolute top-2 left-4 px-2 py-1 rounded-md text-sm"
-            onClick={() => setNextLink(null)}
-          >
-            go back
-          </button>
-          <iframe
-            width="374"
-            height="540"
-            src={`${currentVideoLink?.nextLink}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          ></iframe>
-        </div>
-      )}
 
       {/* expansion btn */}
       {!currentVideoLink && !nextLink && (
         <div className="mx-6 ">
           <button
-            className="px-2 w-full flex justify-between items-center bg-ui-violet text-black"
+            className="px-2 w-full flex justify-between items-center bg-ui-violet text-white"
             onClick={() => toggleExpandBottomSection()}
           >
             <div className="w-[30px] flex justify-center text-lg">

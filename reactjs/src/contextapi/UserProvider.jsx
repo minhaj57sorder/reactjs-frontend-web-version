@@ -13,7 +13,7 @@ export const UserContextProvider = ({ children }) => {
       }
       case "checkLogin": {
         const authuser = localStorage.getItem("auth-user");
-        console.log("Checking", JSON.parse(authuser), state);
+        // console.log("Checking", JSON.parse(authuser), state);
         if (authuser) {
           return {
             ...state,

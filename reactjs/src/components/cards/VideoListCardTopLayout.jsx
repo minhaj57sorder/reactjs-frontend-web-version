@@ -5,7 +5,7 @@ const VideoListCardLayout = ({ children, imageurl }) => {
       <div className="flex relative">
         <img
           className="md:w-[250px] w-[300px] absolute md:right-[-74px] right-[-97px] md:top-[-55px] top-[-67px] z-10"
-          src={imageurl ? imageurl : "/imoje-charecters/raven-prof.png"}
+          src={imageurl ? imageurl : "/imoje-charecters/Raven-investigating.png"}
           width={400}
           height={450}
           alt="Raven Stop"
